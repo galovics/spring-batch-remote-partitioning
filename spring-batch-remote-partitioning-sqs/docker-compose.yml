@@ -1,0 +1,21 @@
+version: "3"
+services:
+  mysql:
+    image: mysql
+    ports:
+      - '3306:3306'
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DEFAULT_REGION=us-east-1
+      - HOSTNAME_EXTERNAL=localhost
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
