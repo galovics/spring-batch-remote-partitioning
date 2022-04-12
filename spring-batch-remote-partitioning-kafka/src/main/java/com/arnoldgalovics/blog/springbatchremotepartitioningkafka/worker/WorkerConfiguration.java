@@ -22,6 +22,7 @@ import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.kafka.dsl.Kafka;
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.listener.ConsumerSeekAware;
 
 @Configuration
 @Profile("worker")
@@ -36,9 +37,10 @@ public class WorkerConfiguration {
     private DataSource dataSource;
 
     @Bean
-    public IntegrationFlow inboundFlow(ConsumerFactory<String, String> cf) {
+    public IntegrationFlow inboundFlow(ConsumerFactory<String, String> cf, ConsumerSeekAware consumerSeekAware) {
         return IntegrationFlows
-                .from(Kafka.messageDrivenChannelAdapter(cf, Constants.TOPIC_NAME))
+                .from(Kafka.messageDrivenChannelAdapter(cf, Constants.TOPIC_NAME)
+                        .onPartitionsAssignedSeekCallback(consumerSeekAware::onPartitionsAssigned))
                 .channel(inboundRequests())
                 .get();
     }
@@ -72,7 +74,7 @@ public class WorkerConfiguration {
     public ItemProcessor<Integer, Customer> itemProcessor() {
         return new ItemProcessor<>() {
             @Override
-            public Customer process(Integer item) {
+            public Customer process(Integer item) throws InterruptedException {
                 return new Customer(item);
             }
         };
