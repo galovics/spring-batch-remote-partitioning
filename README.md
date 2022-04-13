@@ -3,6 +3,8 @@ This repo contains 2 examples for Spring Batch remote partitioning; one with Kaf
 
 The Kafka example is explained in this article: [Scaling Spring Batch processing with partitioning using Kafka](https://arnoldgalovics.com/spring-batch-remote-partitioning-kafka/)
 
+The AWS SQS example is explained in this article: [Spring Batch Remote Partitioning With AWS SQS](https://arnoldgalovics.com/spring-batch-remote-partitioning-aws-sqs/)
+
 ## Running the examples
 Both of the example projects are quite self contained so the running procedure is the same.
 
