@@ -4,7 +4,9 @@ import com.arnoldgalovics.blog.springbatchremotepartitioningkafka.Constants;
 import java.util.function.Function;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.JobRegistry;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.support.JobRegistryBeanPostProcessor;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.integration.partition.RemotePartitioningManagerStepBuilderFactory;
 import org.springframework.batch.integration.partition.StepExecutionRequest;
@@ -54,8 +56,8 @@ public class ManagerConfiguration {
                 .get();
     }
 
-    @Bean(name = "partitionerJob")
-    public Job partitionerJob() {
+    @Bean(name = "partitioningJob")
+    public Job partitioningJob() {
         return jobBuilderFactory.get("partitioningJob")
                 .start(partitionerStep())
                 .incrementer(new RunIdIncrementer())
@@ -73,5 +75,12 @@ public class ManagerConfiguration {
                 .partitioner(Constants.WORKER_STEP_NAME, partitioner())
                 .outputChannel(outboundRequests())
                 .build();
+    }
+
+    @Bean
+    public JobRegistryBeanPostProcessor jobRegistryBeanPostProcessor(JobRegistry jobRegistry) {
+        final JobRegistryBeanPostProcessor answer = new JobRegistryBeanPostProcessor();
+        answer.setJobRegistry(jobRegistry);
+        return answer;
     }
 }

@@ -72,7 +72,8 @@ public class WorkerConfiguration {
     public ItemProcessor<Integer, Customer> itemProcessor() {
         return new ItemProcessor<>() {
             @Override
-            public Customer process(Integer item) {
+            public Customer process(Integer item) throws InterruptedException {
+                Thread.sleep(50);
                 return new Customer(item);
             }
         };
