@@ -49,7 +49,7 @@ public class ManagerStarter implements CommandLineRunner {
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private TransactionTemplate txTemplate;
+    private TransactionRunner txRunner;
 
     @Override
     public void run(String... args) throws Exception {
@@ -68,9 +68,9 @@ public class ManagerStarter implements CommandLineRunner {
     private void handleStuckJob(Long stuckJobId) {
         try {
             waitUntilAllPartitionsFinished(stuckJobId);
-            txTemplate.execute((status) -> {
-                jdbcTemplate.update("UPDATE BATCH_STEP_EXECUTION SET STATUS = 'COMPLETED' WHERE JOB_EXECUTION_ID = " + stuckJobId + " AND STEP_NAME = 'partitionerStep'");
-                jdbcTemplate.update("UPDATE BATCH_JOB_EXECUTION SET STATUS = 'FAILED' WHERE JOB_EXECUTION_ID = " + stuckJobId);
+            txRunner.runInTransaction(() -> {
+                jdbcTemplate.update("UPDATE BATCH_STEP_EXECUTION SET STATUS = 'FAILED' WHERE JOB_EXECUTION_ID = " + stuckJobId + " AND STEP_NAME = 'partitionerStep'");
+                jdbcTemplate.update("UPDATE BATCH_JOB_EXECUTION SET STATUS = 'FAILED', START_TIME = null, END_TIME = null WHERE JOB_EXECUTION_ID = " + stuckJobId);
                 return null;
             });
             jobOperator.restart(stuckJobId);
@@ -95,7 +95,7 @@ public class ManagerStarter implements CommandLineRunner {
     private List<Long> getStuckJobIds() {
         return jdbcTemplate.query("SELECT * FROM BATCH_JOB_INSTANCE bji " +
                 "INNER JOIN BATCH_JOB_EXECUTION bje ON bji.JOB_INSTANCE_ID = bje.JOB_INSTANCE_ID " +
-                "WHERE bje.STATUS = 'STARTED' AND bji.JOB_NAME = 'partitioningJob'", (rs, rowNum) -> {
+                "WHERE bje.STATUS IN ('STARTED', 'FAILED') AND bji.JOB_NAME = 'partitioningJob'", (rs, rowNum) -> {
                     return rs.getLong("JOB_EXECUTION_ID");
                 });
     }
@@ -103,7 +103,7 @@ public class ManagerStarter implements CommandLineRunner {
     private boolean isThereStuckJobs() {
         Long stuckJobCount = jdbcTemplate.queryForObject("SELECT COUNT(*) as STUCK_JOB_COUNT FROM BATCH_JOB_INSTANCE bji " +
                 "INNER JOIN BATCH_JOB_EXECUTION bje ON bji.JOB_INSTANCE_ID = bje.JOB_INSTANCE_ID " +
-                "WHERE bje.STATUS = 'STARTED' AND bji.JOB_NAME = 'partitioningJob'", Long.class);
+                "WHERE bje.STATUS IN ('STARTED', 'FAILED') AND bji.JOB_NAME = 'partitioningJob'", Long.class);
         return stuckJobCount != 0L;
     }
 
