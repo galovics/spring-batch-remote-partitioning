@@ -26,6 +26,9 @@ import org.springframework.messaging.Message;
 @Configuration
 @Profile("manager")
 public class ManagerConfiguration {
+    public static final String PARTITIONING_JOB_NAME = "partitioningJob";
+    public static final String PARTITIONER_STEP_NAME = "partitionerStep";
+
     @Autowired
     private JobBuilderFactory jobBuilderFactory;
 
@@ -56,9 +59,9 @@ public class ManagerConfiguration {
                 .get();
     }
 
-    @Bean(name = "partitioningJob")
+    @Bean(name = PARTITIONING_JOB_NAME)
     public Job partitioningJob() {
-        return jobBuilderFactory.get("partitioningJob")
+        return jobBuilderFactory.get(PARTITIONING_JOB_NAME)
                 .start(partitionerStep())
                 .incrementer(new RunIdIncrementer())
                 .build();
@@ -71,7 +74,7 @@ public class ManagerConfiguration {
 
     @Bean
     public Step partitionerStep() {
-        return stepBuilderFactory.get("partitionerStep")
+        return stepBuilderFactory.get(PARTITIONER_STEP_NAME)
                 .partitioner(Constants.WORKER_STEP_NAME, partitioner())
                 .outputChannel(outboundRequests())
                 .build();
